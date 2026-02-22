@@ -1,6 +1,7 @@
 import os
 
 import torch
+from torch import nn
 from torch.utils.data import DataLoader
 from torchvision import transforms, datasets
 
@@ -55,3 +56,43 @@ val_loader = DataLoader(
 print(f"训练集类别: {train_dataset.classes}")
 print(f"训练集样本数: {len(train_dataset)}")
 print(f"验证集样本数: {len(val_dataset)}")
+
+class CNNClassifier(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Sequential(
+            nn.Conv2d(in_channels=3, out_channels=32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.conv2 = nn.Sequential(
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.conv3 = nn.Sequential(
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2)
+        )
+        self.classfiler = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(in_features=128 * 16 * 16, out_features=256),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(in_features=256, out_features=1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.conv3(x)
+        x = self.classfiler(x)
+        return x
+
+model = CNNClassifier().to(device)
+print(model)
+
+criterion = nn.BCELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=lr)
